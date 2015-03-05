@@ -1,0 +1,22 @@
+
+GET /pictures.htm\r\n
+
+
+GET /index.html\r\n
+
+
+GET /truck.gif\r\n
+
+
+GET /text.txt\r\n
+
+
+
+private void sendBack2(DataOutputStream writer, String returnRequest) throws IOException {
+        byte[] returnArray;
+        try {
+            return Files.readAllBytes(Paths.get(returnRequest));
+        } catch (IOException error) {
+            returnArray = Files.readAllBytes(Paths.get("error.html"));
+        }
+    }
