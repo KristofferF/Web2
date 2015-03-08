@@ -1,5 +1,6 @@
 package pyttewebserver;
 
+import com.apple.eio.FileManager;
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.File;
@@ -8,6 +9,7 @@ import java.io.InputStreamReader;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -54,15 +56,22 @@ public class PytteServer {
         while (true) {
             Socket clientHandlerSocket = serverSocket.accept();
             BufferedReader reader = new BufferedReader(new InputStreamReader(clientHandlerSocket.getInputStream()));
-            readRequest(reader);
+            DataOutputStream writer = new DataOutputStream(clientHandlerSocket.getOutputStream());
+            
+            mRequest = reader.readLine();
             System.out.println(mRequest);
             mRequest = handleRequest(mRequest);
             System.out.println(mRequest);
-            DataOutputStream writer = new DataOutputStream(clientHandlerSocket.getOutputStream());
+            
+            
 
             byte[] bytesArray = sendBack(mRequest);
-            writer.writeBytes("HTTP/1.1 200 OK\r\nServer: 127.0.0.1:" + mPort + "\r\nDate: " + mDate + "\r\nContent Length: " + mNrBytes + "\r\nContent-Type: " + mType + 
+            
+            if (mRequest != null){
+                writer.writeBytes("HTTP/1.1 200 OK\r\nServer: 127.0.0.1:" + mPort + "\r\nDate: " + mDate + "\r\nContent Length: " + mNrBytes + "\r\nContent-Type: " + mType + 
                     "\r\nLast Modified: " + mLastModified + "\r\nConnection: " + mConnection + "\r\n\r\n");
+            }
+            
 
             writer.write(sendBack(mRequest));
             clientHandlerSocket.close();
@@ -104,15 +113,17 @@ public class PytteServer {
      * G?R ALLT H?R ANNARS BLIR DET EXCEPTIONS EFTERSOM DET SKICAKS NULL
      */
     private byte[] sendBack(String returnRequest) throws IOException {
-        for (String response : mResponses) {
-            if (response.equals(returnRequest)) {
+        URL requestURL = getClass().getResource(returnRequest);
+        
+        if (requestURL != null) {
                 mDate = getServerTime();
-                mLastModified = getLastModified(response);
-                mNrBytes = Files.readAllBytes(Paths.get(response)).length;
-                mLastModified = getLastModified(response);
-                mType = Files.probeContentType(Paths.get(response));
-                return Files.readAllBytes(Paths.get(response));
-            }
+                mLastModified = getLastModified(returnRequest);
+                mNrBytes = Files.readAllBytes(Paths.get(returnRequest)).length;
+                mLastModified = getLastModified(returnRequest);
+                mType = Files.probeContentType(Paths.get(returnRequest));
+                System.out.println(returnRequest);
+                return Files.readAllBytes(Paths.get(returnRequest));
+                
         }
         mNrBytes = Files.readAllBytes(Paths.get("error.html")).length;
         return Files.readAllBytes(Paths.get("error.html"));
